@@ -1,0 +1,114 @@
+---
+title: "Low Insulin Diet Study Report"
+author: "Alex"
+date: "April 24, 2025"
+output: html_document
+---
+
+<style>
+h2 {
+  font-size: 28px;
+  font-weight: bold;
+}
+h3 {
+  font-size: 20px;
+  font-weight: bold;
+}
+pre, code {
+  font-size: 14px;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(broom)
+```
+
+Introduction
+
+This report analyzes a 12-week diet study with 50 participants, comparing four diet types (Keto, Low-Carb, Standard, Control) and the effect of Ozempic on weight loss, HOMA-IR, and fasting insulin. The dataset was cleaned using Google BigQuery and analyzed in R.
+
+Data Loading
+
+```{r load-data}
+
+data <- read_csv("low_insulin_diet_bigquery_cleaned.csv")
+head(data)
+```
+
+Weight Loss Analysis
+
+```{r weight-analysis}
+
+weight_change <- data %>%
+  group_by(participant_id, diet_type, ozempic_use) %>%
+  summarise(
+    weight_start = weight_kg[week == 0],
+    weight_end = weight_kg[week == 12],
+    weight_loss = weight_start - weight_end
+  ) %>%
+  ungroup()
+
+weight_summary <- weight_change %>%
+  group_by(diet_type, ozempic_use) %>%
+  summarise(
+    avg_weight_loss = mean(weight_loss, na.rm = TRUE),
+    sd_weight_loss = sd(weight_loss, na.rm = TRUE),
+    n = n()
+  ) %>%
+  ungroup()
+
+weight_summary
+```
+
+Weight Loss Visualization
+
+```{r weight-plot, fig.width=8, fig.height=6}
+
+ggplot(weight_summary, aes(x = diet_type, y = avg_weight_loss, fill = ozempic_use)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Average Weight Loss by Diet Type and Ozempic Use",
+       x = "Diet Type",
+       y = "Average Weight Loss (kg)") +
+  theme_minimal()
+```
+
+HOMA-IR and Fasting Insulin Analysis
+
+```{r homa-ir-analysis}
+
+homa_ir_change <- data %>%
+  group_by(participant_id, diet_type, ozempic_use) %>%
+  summarise(
+    homa_ir_start = homa_ir[week == 0],
+    homa_ir_end = homa_ir[week == 12],
+    homa_ir_change = homa_ir_start - homa_ir_end
+  ) %>%
+  ungroup()
+
+homa_ir_summary <- homa_ir_change %>%
+  group_by(diet_type, ozempic_use) %>%
+  summarise(
+    avg_homa_ir_change = mean(homa_ir_change, na.rm = TRUE),
+    sd_homa_ir_change = sd(homa_ir_change, na.rm = TRUE),
+    n = n()
+  ) %>%
+  ungroup()
+
+homa_ir_summary
+```
+
+Conclusion
+
+Keto and Low-Carb diets resulted in greater weight loss and reductions in HOMA-IR and fasting insulin compared to Standard and Control diets. Ozempic use enhanced these effects, particularly for Keto participants.
+Additional visualizations are available on Tableau Public: https://public.tableau.com/app/profile/alexander.gallagher/viz/LowInsulinDietStudyVisualizations/DietStudyVisualizations.
+
+
+
+
+
+
+
+
+
